@@ -17,7 +17,7 @@ namespace 游戏脚本
     public partial class Form1 : Form
     {
         //声明全局变量
-        #region
+        
         private const int HotKeyID = 9001;
         // 静态全局实例
         public static Form1 Instance { get; private set; }
@@ -40,7 +40,7 @@ namespace 游戏脚本
         private DateTime endTime;
         public string 文心token;
         private static wxyz 验证 = new wxyz();
-        #endregion
+        
 
         public Form1()
         {
@@ -99,11 +99,6 @@ namespace 游戏脚本
         #endregion
 
 
-        //表格初始化,日志输出,获取游戏角色
-        #region 
-        /// <summary>
-        /// 初始化表格
-        /// </summary>
         private void InitRoleTable()
         {
             //初始化表头
@@ -130,10 +125,7 @@ namespace 游戏脚本
             }
 
         }
-        /// <summary>
-        /// 日志输出
-        /// </summary>
-        /// <param name="msg">要输出的内容</param>
+      
         public void AddLog(string msg)
         {
             if (txtLog.InvokeRequired)
@@ -145,73 +137,96 @@ namespace 游戏脚本
             txtLog.SelectionStart = txtLog.TextLength;
             txtLog.ScrollToCaret();
         }
-        
 
-        
-        // 自动查找游戏窗口
         private void 获取角色()
         {
+            大漠中文 dmTemp = null;
             try
             {
                 dmList.Clear();
                 hwndlist.Clear();
                 dataGridView1.Rows.Clear();
                 scriptList.Clear();
-                大漠中文 dmTemp = new 大漠中文();                
 
-                // 这里修改为你的游戏窗口标题
+                dmTemp = new 大漠中文();
+                // 枚举游戏窗口（建议配置化窗口标题特征，而非硬编码）
                 string ret = dmTemp.枚举窗口(0, "$Revision", "Win32Window", 3);
-                //string ret = dmTemp.枚举窗口(0, "$Revision", "Notepad", 3);
-                if (string.IsNullOrWhiteSpace(ret)) return;
-                //arr是枚举出来的文本型句柄数组
-                string[] arr = ret.Split(',');
-                //根据句柄数组的长度计次循环
+                if (string.IsNullOrWhiteSpace(ret))
+                {
+                    AddLog("未检测到游戏窗口");
+                    return;
+                }
+
+                string[] arr = ret.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries); // 移除空元素
                 for (int i = 0; i < arr.Length; i++)
                 {
-                    //文本句柄变成整数加入到全局变量list<hwnds>里面
-                    int hwndID = int.Parse(arr[i]);
-                    hwndlist.Add(hwndID);
-                    //根据单个句柄取到的标题,分割出来取到ID
-                    string title = dmTemp.取窗口标题(hwndID);
-                    string ID = title.Split('-') is var a && a.Length >= 3 ? a[2] : "未知";
-                    //添加到表格里
-                    dataGridView1.Rows.Add(i + 1, ID);                  
+                    // 安全转换句柄
+                    if (!int.TryParse(arr[i], out int hwndID))
+                    {
+                        AddLog($"无效窗口句柄：{arr[i]}，跳过");
+                        continue;
+                    }
 
+                    // 获取窗口标题并安全分割
+                    string title = dmTemp.取窗口标题(hwndID);
+                    string ID = "未知";
+                    if (!string.IsNullOrWhiteSpace(title))
+                    {
+                        string[] titleParts = title.Split('-');
+                        if (titleParts.Length >= 3)
+                        {
+                            ID = titleParts[2].Trim(); // 去除空格
+                        }
+                    }
+
+                    // 添加到集合和表格
+                    hwndlist.Add(hwndID);
+                    dataGridView1.Rows.Add(i + 1, ID, "", "", "", ""); // 初始化血法列为空
                 }
 
                 AddLog($"检测到 {hwndlist.Count} 个游戏窗口");
-                dmTemp.释放();
             }
             catch (Exception ex)
             {
-                AddLog("错误：" + ex.Message);
+                AddLog($"获取角色失败：{ex.Message}");
+            }
+            finally
+            {
+                // 确保大漠对象释放
+                if (dmTemp != null)
+                {
+                    dmTemp.释放();
+                }
             }
         }
-        #endregion
 
-        // 启动/停止按钮
-        #region
         private void btnStart_Click(object sender, EventArgs e)
         {
-            // 间隔是否小于3秒
-            if ((DateTime.Now - lastClickTime).TotalMilliseconds < 4000)
+            // 防重复点击（毫秒转秒更易读）
+            if ((DateTime.Now - lastClickTime).TotalSeconds < 4)
             {
-                return; // 3秒内重复点击直接返回
+                AddLog("操作频繁，请4秒后再试");
+                return;
             }
-
-            // 记录本次点击时间
             lastClickTime = DateTime.Now;
+
             if (!isRunning)
             {
                 if (hwndlist.Count == 0)
                 {
-                    MessageBox.Show("没有角色");
+                    MessageBox.Show("未检测到有效游戏角色", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                // 校验登录状态（提前提示，避免启动后报错）
+                if (string.IsNullOrEmpty(用户登录状态) || 用户登录状态 != "1")
+                {
+                    MessageBox.Show("请先完成登录验证", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
                 isRunning = true;
                 btnStart.Text = "■ 停止脚本/Home";
-                btnStart.BackColor = System.Drawing.Color.Red;
+                btnStart.BackColor = Color.Red;
                 启动脚本线程();
                 AddLog("已启动所有角色脚本");
             }
@@ -219,7 +234,7 @@ namespace 游戏脚本
             {
                 isRunning = false;
                 btnStart.Text = "▶ 启动脚本/Home";
-                btnStart.BackColor = System.Drawing.Color.LimeGreen;
+                btnStart.BackColor = Color.LimeGreen;
                 停止脚本();
                 AddLog("已停止所有角色脚本");
             }
@@ -231,9 +246,6 @@ namespace 游戏脚本
             scriptList.Clear();
         }
 
-
-
-        // 后台脚本线程
         private void 启动脚本线程()
         {
 
@@ -257,15 +269,12 @@ namespace 游戏脚本
                     大漠中文 dm = new 大漠中文();
                     var task = new 脚本(dm, hwndlist[o] ,o);
                     task.Start(a, b, c, d, e, f, g, h, i);
-                    scriptList.Add(task);
+                    scriptList.Add(task);                
                 }
             
         }
-        #endregion
-
-
-        //按钮刷新角色,删除角色
-        #region  
+      
+        
         private void button_刷新角色_Click(object sender, EventArgs e)
         {
             if (isRunning)
@@ -313,65 +322,86 @@ namespace 游戏脚本
                 dataGridView1.Rows[e.RowIndex].Selected = true;
             }
         }
-        #endregion
-
-
-        //解压资源,初始化选择框
-        #region
+     
+      
         private void 解压资源() 
         {
-            // 1. 创建目录（不存在则自动创建）
-            string dmDir = Path.GetDirectoryName(@"C:/Users/Public/dm/img/");
-            if (!Directory.Exists(dmDir))
+            try
             {
-                Directory.CreateDirectory(dmDir);
+                // 1. 定义基础路径，使用Path.Combine避免路径拼接错误
+                string publicDir = Environment.GetEnvironmentVariable("PUBLIC");
+                string baseDir = Path.Combine(publicDir, "dm");
+                string imgDir = Path.Combine(baseDir, "img");
+
+                // 2. 创建目录（递归创建，无需判断是否存在）
+                Directory.CreateDirectory(imgDir);
+
+                // 3. 定义要释放的资源列表（避免重复）
+                var resourceFiles = new Dictionary<string, byte[]>
+        {
+            { "dm.dll", 大话助手2._0.Properties.Resources.dm },
+            { "dmreg.dll", 大话助手2._0.Properties.Resources.dmreg }
+        };
+                var imageResources = new Dictionary<string, Image>
+        {
+            { "大地图.bmp", 大话助手2._0.Properties.Resources.大地图 },
+            { "怨气.bmp", 大话助手2._0.Properties.Resources.怨气 },
+            { "水墨条.bmp", 大话助手2._0.Properties.Resources.水墨条 },
+            { "红木条.bmp", 大话助手2._0.Properties.Resources.红木条 },
+            { "归队.bmp", 大话助手2._0.Properties.Resources.归队 },
+            { "归队h.bmp", 大话助手2._0.Properties.Resources.归队h },
+            { "医宝宝.bmp", 大话助手2._0.Properties.Resources.医宝宝 },
+            { "医宝宝h.bmp", 大话助手2._0.Properties.Resources.医宝宝h },
+            { "解冻.bmp", 大话助手2._0.Properties.Resources.解冻 },
+            { "解冻h.bmp", 大话助手2._0.Properties.Resources.解冻h },
+            { "领双.bmp", 大话助手2._0.Properties.Resources.领双 },
+            { "领双h.bmp", 大话助手2._0.Properties.Resources.领双h },
+            { "修装备.bmp", 大话助手2._0.Properties.Resources.修装备 },
+            { "修装备h.bmp", 大话助手2._0.Properties.Resources.修装备h },
+            { "修装备_算了.bmp", 大话助手2._0.Properties.Resources.修装备_算了 },
+            { "修装备_算了h.bmp", 大话助手2._0.Properties.Resources.修装备_算了h },
+            { "组队.bmp", 大话助手2._0.Properties.Resources.组队 },
+            { "组队h.bmp", 大话助手2._0.Properties.Resources.组队h },
+            { "车夫_取消.bmp", 大话助手2._0.Properties.Resources.车夫_取消 },
+            { "车夫_取消h.bmp", 大话助手2._0.Properties.Resources.车夫_取消h },
+            { "副本同意.bmp", 大话助手2._0.Properties.Resources.副本同意 },
+            { "副本同意h.bmp", 大话助手2._0.Properties.Resources.副本同意h }
+        };
+
+                // 4. 释放DLL文件
+                foreach (var file in resourceFiles)
+                {
+                    string filePath = Path.Combine(baseDir, file.Key);
+                    // 先删除（如果存在且不是正在使用）
+                    if (File.Exists(filePath))
+                    {
+                        try { File.Delete(filePath); }
+                        catch (IOException) { AddLog($"警告：{file.Key} 被占用，跳过删除"); }
+                    }
+                    // 写入文件
+                    File.WriteAllBytes(filePath, file.Value);
+                    //AddLog($"已释放：{filePath}");
+                }
+
+                // 5. 释放图片资源
+                foreach (var img in imageResources)
+                {
+                    string imgPath = Path.Combine(imgDir, img.Key);
+                    // 图片需要先释放原有文件
+                    if (File.Exists(imgPath))
+                    {
+                        try { File.Delete(imgPath); }
+                        catch (IOException) { AddLog($"警告：{img.Key} 被占用，跳过删除"); }
+                    }
+                    img.Value.Save(imgPath);
+                    //AddLog($"已释放图片：{imgPath}");
+                }
             }
-
-            // 2. 如果已存在 dm.dll，先删除（避免覆盖失败）
-
-            if (File.Exists(@"C:/Users/Public/dm/dm.dll"))
+            catch (Exception ex)
             {
-                File.Delete(@"C:/Users/Public/dm/dm.dll");
+                AddLog($"资源解压失败：{ex.Message}");
+                MessageBox.Show($"资源解压失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            if (File.Exists(@"C:/Users/Public/dm/dmreg.dll"))
-            {
-                File.Delete(@"C:/Users/Public/dm/dmreg.dll");
-            }
-
-
-            // 3. 从项目资源中读取 dm.dll 字节流
-            byte[] dmBytes = 大话助手2._0.Properties.Resources.dm;
-            byte[] dmregBytes = 大话助手2._0.Properties.Resources.dmreg;
-
-            // 4. 写入文件到 C:\Users\Public\dm\dm.dll
-            File.WriteAllBytes(@"C:/Users/Public/dm/dm.dll", dmBytes);
-            File.WriteAllBytes(@"C:/Users/Public/dm/dmreg.dll", dmregBytes);
-
-            //导出资源里的图片
-            大话助手2._0.Properties.Resources.大地图.Save(Path.Combine(@"C:/Users/Public/dm/img/", "大地图.bmp"));
-            大话助手2._0.Properties.Resources.怨气.Save(Path.Combine(@"C:/Users/Public/dm/img/", "怨气.bmp"));
-            大话助手2._0.Properties.Resources.水墨条.Save(Path.Combine(@"C:/Users/Public/dm/img/", "水墨条.bmp"));
-            大话助手2._0.Properties.Resources.红木条.Save(Path.Combine(@"C:/Users/Public/dm/img/", "红木条.bmp"));
-            大话助手2._0.Properties.Resources.归队.Save(Path.Combine(@"C:/Users/Public/dm/img/" ,"归队.bmp"));
-            大话助手2._0.Properties.Resources.归队h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "归队h.bmp"));
-            大话助手2._0.Properties.Resources.医宝宝.Save(Path.Combine(@"C:/Users/Public/dm/img/", "医宝宝.bmp"));
-            大话助手2._0.Properties.Resources.医宝宝h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "医宝宝h.bmp"));
-            大话助手2._0.Properties.Resources.解冻.Save(Path.Combine(@"C:/Users/Public/dm/img/", "解冻.bmp"));
-            大话助手2._0.Properties.Resources.解冻h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "解冻h.bmp"));
-            大话助手2._0.Properties.Resources.领双.Save(Path.Combine(@"C:/Users/Public/dm/img/", "领双.bmp"));
-            大话助手2._0.Properties.Resources.领双h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "领双h.bmp"));
-            大话助手2._0.Properties.Resources.修装备.Save(Path.Combine(@"C:/Users/Public/dm/img/", "修装备.bmp"));
-            大话助手2._0.Properties.Resources.修装备h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "修装备h.bmp"));
-            大话助手2._0.Properties.Resources.修装备_算了.Save(Path.Combine(@"C:/Users/Public/dm/img/", "修装备_算了.bmp"));
-            大话助手2._0.Properties.Resources.修装备_算了h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "修装备_算了h.bmp"));
-            大话助手2._0.Properties.Resources.组队.Save(Path.Combine(@"C:/Users/Public/dm/img/", "组队.bmp"));
-            大话助手2._0.Properties.Resources.组队h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "组队h.bmp"));
-            大话助手2._0.Properties.Resources.车夫_取消.Save(Path.Combine(@"C:/Users/Public/dm/img/", "车夫_取消.bmp"));
-            大话助手2._0.Properties.Resources.车夫_取消h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "车夫_取消h.bmp"));
-            大话助手2._0.Properties.Resources.医宝宝.Save(Path.Combine(@"C:/Users/Public/dm/img/", "医宝宝.bmp"));
-            大话助手2._0.Properties.Resources.医宝宝h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "医宝宝h.bmp"));
-            大话助手2._0.Properties.Resources.副本同意.Save(Path.Combine(@"C:/Users/Public/dm/img/", "副本同意.bmp"));
-            大话助手2._0.Properties.Resources.副本同意h.Save(Path.Combine(@"C:/Users/Public/dm/img/", "副本同意h.bmp"));
         }
 
         private void comboBox_hp_SelectedIndexChanged(object sender, EventArgs e)
@@ -393,40 +423,44 @@ namespace 游戏脚本
         {
             petmp阈值 = int.Parse(comboBox_petmp.Text);
         }
-        #endregion
-        #region//配置相关
+
+
         void 保存配置()
         {
-            // 保存复选框勾选状态
-            大话助手2._0.Properties.Settings.Default.ck_无限自动 = ck_无限自动.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_自动归队 = ck_自动归队.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_自动领双 = ck_自动领双.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_副本同意 = ck_副本同意.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_修装备 = ck_修装备.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_医宝宝 = ck_医宝宝.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_自动进队 = ck_自动进队.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_角色血法 = ck_角色血法.Checked;
-            大话助手2._0.Properties.Settings.Default.ck_宝宝血法 = ck_宝宝血法.Checked;
+            try
+            {
+                var settings = 大话助手2._0.Properties.Settings.Default;
+                // 复选框配置
+                settings.ck_无限自动 = ck_无限自动.Checked;
+                settings.ck_自动归队 = ck_自动归队.Checked;
+                settings.ck_自动领双 = ck_自动领双.Checked;
+                settings.ck_副本同意 = ck_副本同意.Checked;
+                settings.ck_修装备 = ck_修装备.Checked;
+                settings.ck_医宝宝 = ck_医宝宝.Checked;
+                settings.ck_自动进队 = ck_自动进队.Checked;
+                settings.ck_角色血法 = ck_角色血法.Checked;
+                settings.ck_宝宝血法 = ck_宝宝血法.Checked;
 
-            // 保存ComboBox选中索引
-            大话助手2._0.Properties.Settings.Default.comboBox_hp = comboBox_hp.SelectedIndex;
-            大话助手2._0.Properties.Settings.Default.comboBox_mp = comboBox_mp.SelectedIndex;
-            大话助手2._0.Properties.Settings.Default.comboBox_pethp = comboBox_pethp.SelectedIndex;
-            大话助手2._0.Properties.Settings.Default.comboBox_petmp = comboBox_petmp.SelectedIndex;
+                // ComboBox配置（校验索引有效性）
+                settings.comboBox_hp = comboBox_hp.SelectedIndex >= 0 ? comboBox_hp.SelectedIndex : 0;
+                settings.comboBox_mp = comboBox_mp.SelectedIndex >= 0 ? comboBox_mp.SelectedIndex : 0;
+                settings.comboBox_pethp = comboBox_pethp.SelectedIndex >= 0 ? comboBox_pethp.SelectedIndex : 0;
+                settings.comboBox_petmp = comboBox_petmp.SelectedIndex >= 0 ? comboBox_petmp.SelectedIndex : 0;
 
-            //保存编辑框textBox_注册码
-            大话助手2._0.Properties.Settings.Default.textBox_注册码 = textBox_注册码.Text;
+                // 文本框配置
+                settings.textBox_注册码 = textBox_注册码.Text.Trim();
+                settings.用户登录状态 = string.IsNullOrWhiteSpace(用户登录状态) ? "0" : 用户登录状态;
 
-            //保存用户登录状态
-            大话助手2._0.Properties.Settings.Default.用户登录状态 = 用户登录状态;
-            string aa = 用户登录状态;
-            Debug.WriteLine(aa);
-
-            // 必须调用，才会写入本地配置
-            大话助手2._0.Properties.Settings.Default.Save();
+                // 保存配置（自动创建备份）
+                settings.Save();
+                AddLog("配置已保存");
+            }
+            catch (Exception ex)
+            {
+                AddLog($"保存配置失败：{ex.Message}");
+                MessageBox.Show($"保存配置失败：{ex.Message}", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
-
-
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -435,41 +469,55 @@ namespace 游戏脚本
             UnregisterHotKey(this.Handle, HotKeyID);
         }
 
-        
+
         private async void Form1_Load(object sender, EventArgs e)
         {
-            // 读取
-            ck_无限自动.Checked = 大话助手2._0.Properties.Settings.Default.ck_无限自动;
-            ck_自动归队.Checked = 大话助手2._0.Properties.Settings.Default.ck_自动归队;
-            ck_自动领双.Checked = 大话助手2._0.Properties.Settings.Default.ck_自动领双;
-            ck_副本同意.Checked = 大话助手2._0.Properties.Settings.Default.ck_副本同意;
-            ck_修装备.Checked = 大话助手2._0.Properties.Settings.Default.ck_修装备;
-            ck_医宝宝.Checked = 大话助手2._0.Properties.Settings.Default.ck_医宝宝;
-            ck_自动进队.Checked = 大话助手2._0.Properties.Settings.Default.ck_自动进队;
-            ck_角色血法.Checked = 大话助手2._0.Properties.Settings.Default.ck_角色血法;
-            ck_宝宝血法.Checked = 大话助手2._0.Properties.Settings.Default.ck_宝宝血法;
-            //还原ComboBox
-            comboBox_hp.SelectedIndex = 大话助手2._0.Properties.Settings.Default.comboBox_hp;
-            comboBox_mp.SelectedIndex = 大话助手2._0.Properties.Settings.Default.comboBox_mp;
-            comboBox_pethp.SelectedIndex = 大话助手2._0.Properties.Settings.Default.comboBox_pethp;
-            comboBox_petmp.SelectedIndex = 大话助手2._0.Properties.Settings.Default.comboBox_petmp;
-            //还原textBox_注册码
-            textBox_注册码.Text = 大话助手2._0.Properties.Settings.Default.textBox_注册码;
-            //如果上次登录状态=="1",则本次直接登录
-            string 登录状态 = 大话助手2._0.Properties.Settings.Default.用户登录状态;
-
-            if (登录状态 == "1")
+            try
             {
+                var settings = 大话助手2._0.Properties.Settings.Default;
+                // 读取复选框
+                ck_无限自动.Checked = settings.ck_无限自动;
+                ck_自动归队.Checked = settings.ck_自动归队;
+                ck_自动领双.Checked = settings.ck_自动领双;
+                ck_副本同意.Checked = settings.ck_副本同意;
+                ck_修装备.Checked = settings.ck_修装备;
+                ck_医宝宝.Checked = settings.ck_医宝宝;
+                ck_自动进队.Checked = settings.ck_自动进队;
+                ck_角色血法.Checked = settings.ck_角色血法;
+                ck_宝宝血法.Checked = settings.ck_宝宝血法;
 
-                await 执行登录();
+                // 读取ComboBox（校验索引范围）
+                comboBox_hp.SelectedIndex = Math.Max(0, Math.Min(settings.comboBox_hp, comboBox_hp.Items.Count - 1));
+                comboBox_mp.SelectedIndex = Math.Max(0, Math.Min(settings.comboBox_mp, comboBox_mp.Items.Count - 1));
+                comboBox_pethp.SelectedIndex = Math.Max(0, Math.Min(settings.comboBox_pethp, comboBox_pethp.Items.Count - 1));
+                comboBox_petmp.SelectedIndex = Math.Max(0, Math.Min(settings.comboBox_petmp, comboBox_petmp.Items.Count - 1));
 
+                // 读取注册码
+                textBox_注册码.Text = settings.textBox_注册码 ?? "";
+
+                // 自动登录
+                string 登录状态 = settings.用户登录状态 ?? "0";
+                if (登录状态 == "1" && !string.IsNullOrWhiteSpace(textBox_注册码.Text))
+                {
+                    AddLog("自动登录中...");
+                    await 执行登录();
+                }
+                else
+                {
+                    btnStart.Enabled = false; // 未登录禁用启动按钮
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"加载配置失败：{ex.Message}，使用默认配置");
+                // 重置默认配置
+                comboBox_hp.SelectedIndex = 0;
+                comboBox_mp.SelectedIndex = 0;
+                comboBox_pethp.SelectedIndex = 0;
+                comboBox_petmp.SelectedIndex = 0;
             }
         }
 
-        #endregion
-
-        ////文心验证相关
-        #region
 
         private static void 文心初始化()
         {
@@ -486,32 +534,53 @@ namespace 游戏脚本
 
         private async Task 执行登录()
         {
-            // 间隔是否小于3秒
-            if ((DateTime.Now - lastClickTime_login).TotalMilliseconds < 3000)
+            if ((DateTime.Now - lastClickTime_login).TotalSeconds < 3)
             {
-                return; // 3秒内重复点击直接返回
+                AddLog("登录操作频繁，请3秒后再试");
+                return;
             }
-
-            // 记录本次点击时间
             lastClickTime_login = DateTime.Now;
-            string MAC地址 = 验证.GetLocalMac();
-            // 直接 await 调用
-            string ret = await 验证.卡密登录(MAC地址, textBox_注册码.Text, "1.0");
-            if (ret.Length == 16)
-            {
-                文心token = ret;
-                注册码 = textBox_注册码.Text;
-                到期时间 = await 验证.取到期时间(注册码);
-                验证.监视用户状态(注册码, 文心token);
-                button_登录.Enabled = false;
-                btnStart.Enabled = true;
-                显示到期时间(到期时间);
-                await 验证.到期自动结束();
-            }
-            else
-            {
-                MessageBox.Show("登录失败：" + 验证.错误码对照(ret));
 
+            string 卡密 = textBox_注册码.Text.Trim();
+            if (string.IsNullOrWhiteSpace(卡密))
+            {
+                //MessageBox.Show("请输入注册码", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                AddLog("正在验证注册码...");
+                string MAC地址 = 验证.GetLocalMac();
+                string ret = await 验证.卡密登录(MAC地址, 卡密, "1.0");
+
+                if (ret.Length == 16)
+                {
+                    文心token = ret;
+                    注册码 = 卡密;
+                    到期时间 = await 验证.取到期时间(注册码);
+                    验证.监视用户状态(注册码, 文心token);
+
+                    // 更新登录状态
+                    用户登录状态 = "1";
+                    button_登录.Enabled = false;
+                    btnStart.Enabled = true;
+                    显示到期时间(到期时间);
+
+                    AddLog($"登录成功！到期时间：{到期时间}");
+                    await 验证.到期自动结束();
+                }
+                else
+                {
+                    string 错误信息 = 验证.错误码对照(ret);
+                    AddLog($"登录失败：{错误信息}");
+                    //MessageBox.Show($"登录失败：{错误信息}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"登录过程异常：{ex.Message}");
+                //MessageBox.Show($"登录异常：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -535,7 +604,7 @@ namespace 游戏脚本
                 MessageBox.Show(验证.错误码对照(ret));
             }
         }
-        #endregion
+       
 
         private void 显示到期时间(string time)
         {
