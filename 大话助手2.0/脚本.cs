@@ -250,5 +250,11 @@ public class 脚本
         catch { return "未知"; }
     }
 
+    /// <summary>
+    /// -1=不在战斗，游戏不做处理,0=战斗界面，1=大地图界面（
+    /// </summary>
+    /// <returns></returns>
     private int 是否战斗() => dm.FindPic(0, 0, 663, 30, "大地图.bmp|怨气.bmp", "202020", 0.9, 0, out _, out _);
+
+
 }
