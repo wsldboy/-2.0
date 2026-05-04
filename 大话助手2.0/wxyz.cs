@@ -156,7 +156,14 @@ namespace 大话助手2._0
                     if (到期时间 < 当前时间)
                     {
 
-                        await Task.Delay(5000);
+                        
+                        for (int i = 20; i > 0; i--) 
+                        {
+                            await Task.Delay(1000);
+                            Form1.Instance.AddLog($"注册码已经到期, 软件将在{i}秒后关闭");
+
+                        }
+                        
                         Application.Exit();
                     }
                 }
@@ -205,7 +212,7 @@ namespace 大话助手2._0
             return 返回;
         }
 
-
+        //生成机器码
         public string GetLocalMac()
         {
             try

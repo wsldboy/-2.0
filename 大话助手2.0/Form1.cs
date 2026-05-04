@@ -214,13 +214,13 @@ namespace 游戏脚本
             {
                 if (hwndlist.Count == 0)
                 {
-                    MessageBox.Show("未检测到有效游戏角色", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AddLog("未检测到有效游戏角色");
                     return;
                 }
                 // 校验登录状态（提前提示，避免启动后报错）
                 if (string.IsNullOrEmpty(用户登录状态) || 用户登录状态 != "1")
                 {
-                    MessageBox.Show("请先完成登录验证", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AddLog("请先完成登录验证");
                     return;
                 }
 
@@ -544,7 +544,7 @@ namespace 游戏脚本
             string 卡密 = textBox_注册码.Text.Trim();
             if (string.IsNullOrWhiteSpace(卡密))
             {
-                //MessageBox.Show("请输入注册码", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                
                 return;
             }
 
@@ -574,13 +574,13 @@ namespace 游戏脚本
                 {
                     string 错误信息 = 验证.错误码对照(ret);
                     AddLog($"登录失败：{错误信息}");
-                    //MessageBox.Show($"登录失败：{错误信息}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                   
                 }
             }
             catch (Exception ex)
             {
                 AddLog($"登录过程异常：{ex.Message}");
-                //MessageBox.Show($"登录异常：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+               
             }
         }
 
@@ -598,10 +598,8 @@ namespace 游戏脚本
                 MessageBox.Show("解绑成功,可以登录了");
             }
             else
-            {
-
-                //LogForm.日志输出(ret);
-                MessageBox.Show(验证.错误码对照(ret));
+            {                
+                AddLog(验证.错误码对照(ret));                
             }
         }
        
