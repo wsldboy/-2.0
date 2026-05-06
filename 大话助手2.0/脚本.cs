@@ -151,7 +151,16 @@ public class 脚本
         dm.KeyUp(18);
     }
 
-    private void 自动归队() => 查找点击("归队.bmp|归队h.bmp", 285, 0, 854, 86, "正在归队", 3000);
+    private void 自动归队() 
+    {
+        dm.FindPic(285,0,854,86, "归队.bmp|归队h.bmp","202020",0.9,0,out int x,out int y);
+        if(x > 0)
+        {
+            Thread.Sleep(3000);
+            移动点击(x + 5, y + 5);
+            安全日志($"{getID()} 自动归队");
+        }
+    } 
     private void 自动领双()
     {
         查找点击("解冻.bmp|解冻h.bmp", 246, 337, 516, 397, "解冻双倍");
@@ -172,37 +181,51 @@ public class 脚本
             //return;
         }
 
-        //int hp = 100, mp = 100;
+        int hp = 100, mp = 100;
         if (winx == 1024)
         {
             dm.FindPic(929, 23, 1017, 35, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int hpx, out _);
+            if(hpx> 0)
+            {
+               hp = (int)Math.Round((hpx - 929) / 88f * 100);
+                
+                if (hp < Form1.Instance.hp阈值 && 血未操作 && inBattle == 1)
+                { 移动右键(1000, 28); 血未操作 = false; 安全日志($"{getID()}角色使用血药"); }
+            }
+                
             dm.FindPic(929, 39, 1017, 50, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int mpx, out _);
-            int hp = hpx > 0 ? (int)Math.Round((hpx - 929) / 88f * 100) : 100;
-            int mp = mpx > 0 ? (int)Math.Round((mpx - 929) / 88f * 100) : 100;
-
-            if (hp < Form1.Instance.hp阈值 && 血未操作 && inBattle == 1)
-            { 移动右键(1000, 28); 血未操作 = false; 安全日志($"{getID()}角色使用血药"); }
-            if (mp < Form1.Instance.mp阈值 && 蓝未操作 && inBattle == 1)
-            { 移动右键(1000, 45); 蓝未操作 = false; 安全日志($"{getID()}角色使用法药"); }
-            安全设置UI(序号, "col3", hp.ToString());
-            安全设置UI(序号, "col4", mp.ToString());
+            if(mpx> 0)
+            {
+               mp = (int)Math.Round((mpx - 929) / 88f * 100);
+                
+                if (mp < Form1.Instance.mp阈值 && 蓝未操作 && inBattle == 1)
+                { 移动右键(1000, 45); 蓝未操作 = false; 安全日志($"{getID()}角色使用法药"); }
+            }                  
+            
         }
         else if (winx == 1366)
         {
             dm.FindPic(1259, 25, 1358, 38, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int hpx, out _);
+            if (hpx > 0)
+            {
+                hp = (int)Math.Round((hpx - 1259) / 99f * 100);
+                
+                if (hp < Form1.Instance.hp阈值 && 血未操作 && inBattle == 1)
+                { 移动右键(1300, 31); 血未操作 = false; 安全日志($"{getID()}角色使用血药"); }
+            }
             dm.FindPic(1259, 42, 1358, 55, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int mpx, out _);
-            int hp = hpx > 0 ? (int)Math.Round((hpx - 1259) / 99f * 100) : 100;
-            int mp = mpx > 0 ? (int)Math.Round((mpx - 1259) / 99f * 100) : 100;
-
-            if (hp < Form1.Instance.hp阈值 && 血未操作 && inBattle == 1)
-            { 移动右键(1300, 31); 血未操作 = false; 安全日志($"{getID()}角色使用血药"); }
-            if (mp < Form1.Instance.mp阈值 && 蓝未操作 && inBattle == 1)
-            { 移动右键(1300, 48); 蓝未操作 = false; 安全日志($"{getID()}角色使用法药"); }
-            安全设置UI(序号, "col3", hp.ToString());
-            安全设置UI(序号, "col4", mp.ToString());
+            if (mpx > 0)
+            {
+                mp = (int)Math.Round((mpx - 1259) / 99f * 100);
+                
+                if (mp < Form1.Instance.mp阈值 && 蓝未操作 && inBattle == 1)
+                { 移动右键(1300, 48); 蓝未操作 = false; 安全日志($"{getID()}角色使用法药"); }
+            }
+            
         }
+        安全设置UI(序号, "col3", hp.ToString());
+        安全设置UI(序号, "col4", mp.ToString());
 
-        
     }
 
     // ====================== 宝宝血法（修复了BUG） ======================
@@ -215,37 +238,51 @@ public class 脚本
             //return;
         }
 
-        //int pethp = 100, petmp = 100;
+        int pethp = 100, petmp = 100;
         if (winx == 1024)
         {
             dm.FindPic(797, 20, 860, 32, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int hpx, out _);
-            dm.FindPic(797, 34, 860, 46, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int mpx, out _);
-            int pethp = hpx > 0 ? (int)Math.Round((hpx - 797) / 63f * 100) : 100;
-            int petmp = mpx > 0 ? (int)Math.Round((mpx - 797) / 63f * 100) : 100;
+            if(hpx > 0)
+            {
+                pethp = (int)Math.Round((hpx - 797) / 63f * 100);
+                
+                if (pethp < Form1.Instance.pethp阈值 && 血未操作p && inBattle == 1)
+                { 移动右键(820, 26); 血未操作p = false; 安全日志($"{getID()}宝宝使用血药"); }
+            }
 
-            if (pethp < Form1.Instance.pethp阈值 && 血未操作p && inBattle == 1)
-            { 移动右键(820, 26); 血未操作p = false; 安全日志($"{getID()}宝宝使用血药"); }
-            if (petmp < Form1.Instance.petmp阈值 && 蓝未操作p && inBattle == 1) 
-            { 移动右键(820, 40); 蓝未操作p = false; 安全日志($"{getID()}宝宝使用法药"); }
-            安全设置UI(序号, "col5", pethp.ToString());
-            安全设置UI(序号, "col6", petmp.ToString());
+            dm.FindPic(797, 34, 860, 46, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int mpx, out _);
+            if (mpx > 0)
+            {
+                petmp = (int)Math.Round((mpx - 797) / 63f * 100);
+                
+                if (petmp < Form1.Instance.petmp阈值 && 蓝未操作p && inBattle == 1) 
+                { 移动右键(820, 40); 蓝未操作p = false; 安全日志($"{getID()}宝宝使用法药"); }
+            }
+            
+
         }
         else if (winx == 1366)
         {
             dm.FindPic(1110, 22, 1181, 35, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int hpx, out _);
+            if (hpx > 0)
+            {
+                pethp = (int)Math.Round((hpx - 1110) / 71f * 100);
+                
+                if (pethp < Form1.Instance.pethp阈值 && 血未操作p && inBattle == 1)
+                { 移动右键(1150, 29); 血未操作p = false; 安全日志($"{getID()}宝宝使用血药"); }
+            }
             dm.FindPic(1110, 37, 1181, 50, "水墨条.bmp|红木条.bmp", "202020", 0.9, 0, out int mpx, out _);
-            int pethp = hpx > 0 ? (int)Math.Round((hpx - 1110) / 71f * 100) : 100;
-            int petmp = mpx > 0 ? (int)Math.Round((mpx - 1110) / 71f * 100) : 100;
-
-            if (pethp < Form1.Instance.pethp阈值 && 血未操作p && inBattle == 1)
-            { 移动右键(1150, 29); 血未操作p = false; 安全日志($"{getID()}宝宝使用血药"); }
-            if (petmp < Form1.Instance.petmp阈值 && 蓝未操作p && inBattle == 1) // 
-            { 移动右键(1150, 44); 蓝未操作p = false; 安全日志($"{getID()}宝宝使用法药"); }
-            安全设置UI(序号, "col5", pethp.ToString());
-            安全设置UI(序号, "col6", petmp.ToString());
+            if (mpx > 0)
+            {
+                petmp = (int)Math.Round((mpx - 1110) / 71f * 100);
+                
+                if (petmp < Form1.Instance.petmp阈值 && 蓝未操作p && inBattle == 1)
+                { 移动右键(1150, 44); 蓝未操作p = false; 安全日志($"{getID()}宝宝使用法药"); }
+            }
+            
         }
-
-        
+        安全设置UI(序号, "col5", pethp.ToString());
+        安全设置UI(序号, "col6", petmp.ToString());
     }
 
     // ====================== 工具 ======================
