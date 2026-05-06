@@ -595,7 +595,7 @@ namespace 游戏脚本
             string ret = await 验证.用户转绑(MAC地址, textBox_注册码.Text, "1");
             if (ret == "1")
             {
-                AddLog("解绑成功,可用时间减少60分钟.");
+                AddLog("解绑成功：可用时间减少60分钟.");
             }
             else
             {                
